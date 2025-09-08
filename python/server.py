@@ -10,32 +10,30 @@ print(f"Server is listening on 0.0.0.0:8080")
 
 def handle_client(conn, addr):
     try:
-        while True:
-            length_prefix = b''
-            while len(length_prefix) < 12:
-                chunk = conn.recv(12 - len(length_prefix))
-                if not chunk:
-                    print(f"Client {addr} disconnected.")
-                    return
-                length_prefix += chunk
+        # 1. Read request
+        request_data = conn.recv(1024).decode()
+        if not request_data:
+            print(f"Client {addr} disconnected.")
+            return
+        print(f"Raw request from {addr}:\n{request_data}")
 
-            message_length = int.from_bytes(length_prefix, byteorder='big')
+        # 2. Parse minimal request line
+        request_line = request_data.splitlines()[0]
+        method, path, version = request_line.split()
 
-            full_message = b''
-            while len(full_message) < message_length:
-                chunk = conn.recv(message_length - len(full_message))
-                if not chunk:
-                    print(f"Client {addr} disconnected.")
-                    return
-                full_message += chunk
+        # 3. Build minimal response
+        body = f"<html><body><h1>Hello from minimal HTTP server!</h1><p>You requested {path}</p></body></html>"
+        response = (
+            "HTTP/1.1 200 OK\r\n"
+            f"Content-Length: {len(body)}\r\n"
+            "Content-Type: text/html\r\n"
+            "\r\n"
+            f"{body}"
+        )
 
-            received_data = json.loads(full_message.decode())
-            print(f"Received data from {addr}: {received_data}")
-            
-            response_data = {'status': 'success', 'echo': received_data['message']}
-            sending_data = json.dumps(response_data).encode()
-            conn.send(sending_data)
-            
+        # 4. Send response
+        conn.sendall(response.encode())
+
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
     finally:
