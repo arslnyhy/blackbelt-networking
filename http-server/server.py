@@ -2,7 +2,7 @@ import socket
 import threading
 import time
 
-KEEP_ALIVE_TIMEOUT = 5  # seconds
+KEEP_ALIVE_TIMEOUT = 60  # seconds
 
 socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 socket_server.bind(('0.0.0.0', 8080))
